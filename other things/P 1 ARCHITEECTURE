@@ -1,0 +1,122 @@
+# System Architecture Document: College Student App
+
+## 1. Full System Architecture
+
+The application will follow a **Client-Server Architecture** separating the frontend UI from the backend business logic and database.
+
+*   **Frontend (Client)**: 
+    *   **Framework**: React.js (using Vite) or Next.js for high performance and excellent mobile-friendly capabilities.
+    *   **Styling**: Tailwind CSS for building responsive, mobile-first, and premium UI designs quickly.
+    *   **State Management**: Zustand or Redux Toolkit for managing user session, to-do state, and social connections.
+    *   **Data Fetching**: React Query (TanStack Query) for caching and synchronizing API requests.
+*   **Backend (Server)**: 
+    *   **Framework**: Node.js with Express.js (or NestJS for a strictly enforced modular architecture).
+    *   **Architecture Pattern**: MVC (Model-View-Controller) or Service-Oriented to maintain clean code separation.
+    *   **Authentication**: JSON Web Tokens (JWT) for secure, stateless API authentication.
+*   **Database**: 
+    *   **Primary DB**: PostgreSQL (Relational Database) because student profiles, social connections, and to-do lists are highly structured and relational.
+    *   **ORM**: Prisma ORM for type-safe database queries.
+*   **Infrastructure (Recommended)**:
+    *   **Frontend Hosting**: Vercel or Netlify.
+    *   **Backend Hosting**: Render, Railway, or Heroku.
+    *   **Database Hosting**: Supabase, Neon, or AWS RDS.
+
+---
+
+## 2. Folder Structure
+
+We will use a modular structure. Here is the recommended setup (assuming a typical monorepo or two separate repositories):
+
+```text
+/college-app-root
+│
+├── /frontend               # Frontend Application (React/Vite)
+│   ├── /public             # Static assets (images, icons)
+│   ├── /src
+│   │   ├── /assets         # Internal assets (fonts, SVGs)
+│   │   ├── /components     # Reusable UI components (Buttons, Cards, Inputs)
+│   │   ├── /features       # Domain-specific modules (auth, tasks, workouts, social)
+│   │   ├── /hooks          # Custom React hooks
+│   │   ├── /layouts        # Page layouts (Navbar, Sidebar, Footer)
+│   │   ├── /pages          # Application pages (Home, Dashboard, Network)
+│   │   ├── /services       # API client functions (Axios/Fetch)
+│   │   ├── /store          # Global state management
+│   │   ├── /utils          # Helper functions and constants
+│   │   ├── App.jsx         # Root component
+│   │   └── main.jsx        # Entry point
+│   ├── package.json
+│   └── tailwind.config.js
+│
+├── /backend                # Backend Server (Node/Express)
+│   ├── /prisma             # Database schema and migrations
+│   ├── /src
+│   │   ├── /config         # Environment and DB config
+│   │   ├── /controllers    # Request handlers (logic for endpoints)
+│   │   ├── /middlewares    # Auth guards, error handlers, validation
+│   │   ├── /models         # Data models / interfaces
+│   │   ├── /routes         # Route definitions mapped to controllers
+│   │   ├── /services       # Business logic operations (DB calls)
+│   │   ├── /utils          # Helper functions (JWT generation, hashing)
+│   │   └── server.js       # Express app initialization
+│   ├── package.json
+│   └── .env
+```
+
+---
+
+## 3. API Routes List
+
+### Authentication (`/api/auth`)
+*   `POST /api/auth/register` - Register a new student.
+*   `POST /api/auth/login` - Authenticate student and return JWT.
+*   `GET /api/auth/me` - Get current authenticated user profile.
+
+### To-Do List (`/api/tasks`)
+*   `GET /api/tasks` - Fetch all tasks for the user (query filters: type=academic|workout).
+*   `POST /api/tasks` - Create a new task.
+*   `PUT /api/tasks/:id` - Update task details or mark as completed.
+*   `DELETE /api/tasks/:id` - Delete a task.
+
+### Workout Plan Generator (`/api/workouts`)
+*   `POST /api/workouts/generate` - Generate a plan based on parameters (level: beginner/intermediate/advanced). Returns a structured plan and optionally saves it.
+*   `GET /api/workouts/plans` - Fetch previously saved workout plans for the user.
+*   `POST /api/workouts/plans/:id/tasks` - Convert a workout plan into actionable to-do tasks.
+
+### Social / Partners (`/api/network`)
+*   `GET /api/network/discover` - Fetch list of potential study/workout partners based on user preferences and global matching.
+*   `POST /api/network/connect` - Send a connection request to another student.
+*   `PUT /api/network/requests/:id` - Accept or decline a connection request.
+*   `GET /api/network/connections` - List all established connections.
+
+---
+
+## 4. Data Flow Between Frontend and Backend
+
+### Flow 1: Authentication & Authorization (Login)
+1. **Frontend**: User enters credentials (email/password) in the app.
+2. **Frontend**: Sends a `POST` request to `/api/auth/login`.
+3. **Backend**: Controller validates input, checks DB for the user, verifies password hash, and generates a JWT.
+4. **Backend**: Returns the JWT (and user metadata) via JSON (or secure HttpOnly cookie).
+5. **Frontend**: Stores the token (e.g., in local storage or state) and redirects the user to the Dashboard. Subsequent requests include this token in the `Authorization` header.
+
+### Flow 2: Task Management (Adding a Workout Task)
+1. **Frontend**: User fills out the "New Task" form on their mobile device and hits 'Save'.
+2. **Frontend**: Dispatches a `POST` request to `/api/tasks` with payload `{ title, type: 'workout', date }`.
+3. **Backend**: Middleware verifies the JWT to identify the user.
+4. **Backend**: Controller passes data to the Service layer, which uses Prisma to insert a new task row into the PostgreSQL database, linked to the user's ID.
+5. **Backend**: Returns a `201 Created` status with the newly created task object.
+6. **Frontend**: React Query caches the new task, forcing the UI to re-render and display it instantly.
+
+### Flow 3: Workout Plan Generation
+1. **Frontend**: User selects "Beginner" on the Workout Generator UI and clicks "Generate".
+2. **Frontend**: Sends a `POST` request to `/api/workouts/generate` with payload `{ level: 'beginner' }`.
+3. **Backend**: Service layer processes the request. It fetches the required 'beginner' template (either from DB, hardcoded JSON structures, or possibly an AI integration).
+4. **Backend**: Compiles the routine into a structured object and sends it back to the client.
+5. **Frontend**: Receives the data and dynamically maps through the routine, rendering a visually appealing mobile card list for the workout plan.
+
+### Flow 4: Finding Study Partners
+1. **Frontend**: User navigates to the "Network" tab.
+2. **Frontend**: Requests `GET /api/network/discover`.
+3. **Backend**: Extracts user ID from the token, queries the User table using Prisma for other students who match the current user's profile preferences (e.g., same major, similar timezones, active workout interests).
+4. **Backend**: Returns an array of user profile objects (excluding sensitive info like passwords).
+5. **Frontend**: Displays the "Discover" feed where the user can swipe or scroll to find partners globally.

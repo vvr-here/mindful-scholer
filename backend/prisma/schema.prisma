@@ -1,0 +1,210 @@
+// schema.prisma — The Mindful Scholar Database
+// ORM: Prisma   DB: PostgreSQL
+//
+// Run commands:
+//   npx prisma migrate dev --name init   → create tables + run migration
+//   npx prisma generate                  → regenerate Prisma Client
+//   npx prisma studio                    → visual DB browser
+//
+// Naming convention: camelCase fields (Prisma standard); snake_case in DB via @map
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUM TYPES
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum WorkoutLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum TaskCategory {
+  academic
+  workout
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum AvailabilitySlot {
+  weekday_morning
+  weekday_evening
+  weekend_morning
+  weekend_evening
+}
+
+enum MatchStatus {
+  pending   // request sent, not yet accepted
+  accepted
+  declined
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER
+// Core identity + academic / fitness profile bundled in one table for
+// simplicity. Split into UserProfile if the profile grows complex.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+
+  // Academic profile
+  subjects     String[] @default([])  // e.g. ["mathematics", "physics"]
+
+  // Fitness profile
+  workoutLevel WorkoutLevel?
+  availability AvailabilitySlot[] @default([])
+  bio          String?            @db.VarChar(500)
+
+  // Gamification
+  xp           Int      @default(0)
+  level        Int      @default(1)
+
+  // Timestamps
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tasks        Task[]
+  workoutPlans WorkoutPlan[]
+
+  // Matches where this user initiated
+  sentMatches      Match[] @relation("MatchSender")
+  // Matches where this user was the target
+  receivedMatches  Match[] @relation("MatchReceiver")
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TASK
+// Covers both academic and workout tasks. Filtered by `category` on the API.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Task {
+  id        String       @id @default(cuid())
+  userId    String       @map("user_id")
+
+  title     String
+  notes     String?      @db.VarChar(1000)
+
+  category  TaskCategory                    // 'academic' | 'workout'
+  status    TaskStatus   @default(pending)  // 'pending' | 'in_progress' | 'completed'
+
+  dueDate   DateTime?    @map("due_date")
+
+  // If this task was generated from a WorkoutPlan, reference it
+  workoutPlanId String?      @map("workout_plan_id")
+  workoutPlan   WorkoutPlan? @relation(fields: [workoutPlanId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, category])
+  @@index([userId, status])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WORKOUT PLAN
+// A generated or user-saved plan. Exercises are stored as JSON for flexibility
+// (no fixed schema per exercise type).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model WorkoutPlan {
+  id        String       @id @default(cuid())
+  userId    String       @map("user_id")
+
+  name      String       @default("My Workout Plan")
+  level     WorkoutLevel
+
+  // Array of exercise objects:
+  // [{ name, sets, reps, duration, done }]
+  // Stored as Json[] for schema flexibility
+  exercises Json[]       @default([])
+
+  // Weekly schedule as JSON: { Mon: "Upper Body", Tue: "Cardio", ... }
+  weeklySchedule Json?   @map("weekly_schedule")
+
+  isActive  Boolean      @default(false) @map("is_active")
+
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt      @map("updated_at")
+
+  // Relations
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]       // tasks generated from this plan
+
+  @@index([userId])
+  @@index([userId, level])
+  @@map("workout_plans")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MATCH
+// Represents a study/workout partner connection between two users.
+// Stores the compatibility score breakdown alongside the composite score.
+//
+// Uniqueness: one directed edge per (userId → matchedUserId) pair.
+// To check mutual connections, query both directions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Match {
+  id              String      @id @default(cuid())
+
+  // The user who initiated the match / connection request
+  userId          String      @map("user_id")
+  // The user who received the request
+  matchedUserId   String      @map("matched_user_id")
+
+  // Composite score [0–100] from the matching engine
+  compatibilityScore Float    @map("compatibility_score")
+
+  // Per-component breakdown stored as JSON for full transparency:
+  // { subjects: 80.0, workoutLevel: 100.0, availability: 50.0 }
+  scoreBreakdown  Json?       @map("score_breakdown")
+
+  // Human-readable match reasons from the engine
+  matchReasons    String[]    @default([]) @map("match_reasons")
+
+  // Shared study subjects at time of matching (snapshot)
+  sharedSubjects  String[]    @default([]) @map("shared_subjects")
+
+  status          MatchStatus @default(pending)
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt      @map("updated_at")
+
+  // Relations
+  user            User        @relation("MatchSender",   fields: [userId],        references: [id], onDelete: Cascade)
+  matchedUser     User        @relation("MatchReceiver", fields: [matchedUserId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate directed edges
+  @@unique([userId, matchedUserId])
+
+  @@index([userId])
+  @@index([matchedUserId])
+  @@index([status])
+  @@index([compatibilityScore])
+  @@map("matches")
+}
