@@ -32,9 +32,11 @@ function AppRouter() {
     );
   }
 
-  if (status !== "authenticated") {
-    return <LoginPage onSuccess={() => setPage("home")} />;
-  }
+  // === DEV BYPASS: Commented out to test frontend without logging in ===
+  // if (status !== "authenticated") {
+  //   return <LoginPage onSuccess={() => setPage("home")} />;
+  // }
+  // ======================================================================
 
   switch (page) {
     case "tasks":    return <TaskList       onNavigate={setPage} />;
