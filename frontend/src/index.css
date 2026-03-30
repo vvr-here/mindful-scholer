@@ -42,6 +42,22 @@
   --radius-full:      999px;
 }
 
+/* ── Dark Mode Overrides ─────────────────────────────────────────────────── */
+.dark {
+  --bg:               #120c18;
+  --surface:          #1b1423;
+  --surface-low:      #261c31;
+  --surface-mid:      #322541;
+  --surface-high:     #403051;
+  --surface-highest:  #4f3c64;
+  --white:            #261c31;
+
+  --on-surface:       #ede4ff;
+  --on-surface-var:   #b2a6d5;
+  --outline:          #5f557f;
+  --outline-var:      #4f3c64;
+}
+
 /* ── Reset ───────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -718,38 +734,89 @@ body {
 /* ── Responsive — tablets & desktops (≥ 640px) ───────────────────────────── */
 @media (min-width: 640px) {
   #root {
-    max-width: 480px;
+    max-width: 720px;
+    margin: 0 auto;
     box-shadow: 0 0 60px rgba(50,41,79,.08);
   }
 
-  .page-content { padding: 0 28px 110px; }
+  .page-content { padding: 0 32px 110px; }
   .dashboard-header, .page-header { padding-top: 40px; }
 
   .display-num { font-size: 3.6rem; }
 
-  /* Wider cards look better with more padding */
   .card { padding: 24px; }
   .buddy-card { padding: 22px; }
-
-  /* Two-column chip grid on wider screens */
   .chip-grid { gap: 10px; }
+
+  /* Two-column wrapping for lists on tablet */
+  .tasks-container, .buddies-container, .plans-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
 }
 
 /* ── Responsive — full desktop (≥ 1024px) ────────────────────────────────── */
 @media (min-width: 1024px) {
-  body { background: #f0eaff; }
+  body { background: var(--bg); }
 
   #root {
-    max-width: 430px;
-    margin: 24px auto;
-    border-radius: 40px;
+    max-width: 1200px;
+    margin: 40px auto;
+    border-radius: 20px;
+    min-height: calc(100dvh - 80px);
+    box-shadow: 0 24px 80px rgba(50,41,79,.1);
+    display: flex; /* Sidebar layout */
     overflow: hidden;
-    min-height: calc(100dvh - 48px);
-    box-shadow: 0 24px 80px rgba(50,41,79,.2);
   }
 
-  .app-shell { min-height: calc(100dvh - 48px); }
-  .bottom-nav { border-radius: 0 0 40px 40px; }
+  .app-shell { 
+    flex: 1; 
+    min-height: calc(100dvh - 80px); 
+    display: flex;
+    flex-direction: row; 
+    width: 100%;
+  }
+
+  /* Desktop Left Sidebar replaces Bottom Nav */
+  .bottom-nav {
+    position: relative;
+    transform: none;
+    left: 0;
+    bottom: auto;
+    flex-direction: column;
+    width: 280px;
+    height: 100%;
+    border-top: none;
+    border-right: 1px solid rgba(178, 166, 213, 0.3);
+    padding: 40px 20px;
+    background: var(--surface-low);
+    justify-content: flex-start;
+    gap: 16px;
+  }
+  
+  .nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 16px 24px;
+    gap: 16px;
+    border-radius: var(--radius-md);
+  }
+  
+  .nav-item:hover { background: var(--surface-mid); }
+  .nav-label { font-size: 1rem; }
+
+  /* Page Content takes up right side */
+  .page-container-wrapper { flex: 1; height: 100%; overflow-y: auto; }
+  .page-content { padding: 0 48px 60px; }
+  .dashboard-header { padding: 52px 48px 30px; border-radius: 0 20px 0 0; }
+  .page-header { padding: 52px 48px 30px; }
+
+  /* Three-column grids on desktop */
+  .tasks-container, .buddies-container, .plans-container {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
 }
 
 /* ── Safe area insets (iPhone notch / Dynamic Island / home bar) ─────────── */

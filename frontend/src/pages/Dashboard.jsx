@@ -52,14 +52,23 @@ export default function Dashboard({ onNavigate }) {
             </span>
           </div>
         </div>
-        <button
-          className="icon-btn"
-          aria-label="Logout"
-          onClick={logout}
-          title="Log out"
-        >
-          <span className="material-symbols-rounded">logout</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="icon-btn"
+            onClick={() => document.documentElement.classList.toggle('dark')}
+            title="Toggle Dark Mode"
+          >
+            <span className="material-symbols-rounded">dark_mode</span>
+          </button>
+          <button
+            className="icon-btn"
+            aria-label="Logout"
+            onClick={logout}
+            title="Log out"
+          >
+            <span className="material-symbols-rounded">logout</span>
+          </button>
+        </div>
       </header>
 
       <main className="page-content">
