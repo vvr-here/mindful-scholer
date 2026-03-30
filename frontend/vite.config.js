@@ -26,12 +26,8 @@ export default defineConfig({
       },
     },
     // Remove console.* and debugger in production builds
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
+    esbuild: {
+      drop: ['console', 'debugger'],
     },
   },
 
