@@ -5,6 +5,7 @@ Welcome to The Mindful Scholar — the all-in-one hub empowering college student
 This platform reimagines student engagement by uniting productivity, wellness, and networking into one seamless ecosystem. Whether you’re looking for the perfect study partner across the country or a local gym buddy to keep you accountable, you’ll find your people here.
 
 🌟 Core Features
+
 🔍 Global Matchmaking Engine
 
 Input your academic subjects and workout experience level (Beginner / Intermediate / Advanced) to get matched with the right peers out of thousands. Compatibility scores are smart, meaningful, and personalized.
