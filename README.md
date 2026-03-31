@@ -38,4 +38,5 @@ Form mini-teams of up to four peers with synced leaderboards to transform studyi
 📱 Mobile App (iOS & Android)
 Enjoy a polished, native experience with push notifications so you never miss a deadline, workout, or study session again.
 
+
 💙 Dedicated to empowering students — in mind, body, and community.
