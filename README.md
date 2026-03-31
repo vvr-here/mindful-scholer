@@ -27,10 +27,13 @@ We’re constantly evolving to support student success. Here’s what’s coming
 
 🤖 AI Match & Chat Integration
 AI-curated conversation prompts and real-time messaging to help new connections spark instantly and naturally.
+
 📆 Automated Calendar Sync
 Sync your university .ics files or your Google Calendar to automatically block out study sessions, especially as exams approach.
+
 👥 Guilds / Study Pods
 Form mini-teams of up to four peers with synced leaderboards to transform studying into a collaborative team challenge.
+
 📱 Mobile App (iOS & Android)
 Enjoy a polished, native experience with push notifications so you never miss a deadline, workout, or study session again.
 
