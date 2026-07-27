@@ -35,6 +35,10 @@ Sync your university .ics files or your Google Calendar to automatically block o
 👥 Guilds / Study Pods
 Form mini-teams of up to four peers with synced leaderboards to transform studying into a collaborative team challenge.
 
+
+
+PROJECT ABORTED 
+
 📱 Mobile App (iOS & Android)
 Enjoy a polished, native experience with push notifications so you never miss a deadline, workout, or study session again.
 
